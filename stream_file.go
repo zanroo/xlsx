@@ -9,13 +9,14 @@ import (
 )
 
 type StreamFile struct {
-	xlsxFile       *File
-	sheetXmlPrefix []string
-	sheetXmlSuffix []string
-	zipWriter      *zip.Writer
-	currentSheet   *streamSheet
-	styleIds       [][]int
-	err            error
+	xlsxFile         *File
+	sheetXmlPrefix   []string
+	sheetXmlSuffix   []string
+	zipWriter        *zip.Writer
+	currentSheet     *streamSheet
+	styleIds         [][]int
+	err              error
+	SheetHeaderTypes []*CellType
 }
 
 type streamSheet struct {
@@ -76,6 +77,7 @@ func (sf *StreamFile) write(cells []string) error {
 	if err := sf.currentSheet.write(`<row r="` + strconv.Itoa(sf.currentSheet.rowCount) + `">`); err != nil {
 		return err
 	}
+
 	for colIndex, cellData := range cells {
 		// documentation for the c.t (cell.Type) attribute:
 		// b (Boolean): Cell containing a boolean.
@@ -88,13 +90,24 @@ func (sf *StreamFile) write(cells []string) error {
 		// str (String): Cell containing a formula string.
 		cellCoordinate := GetCellIDStringFromCoords(colIndex, sf.currentSheet.rowCount-1)
 		cellType := "inlineStr"
+		if *sf.SheetHeaderTypes[colIndex] == *CellTypeNumeric.Ptr() {
+			cellType = "n"
+		}
 		cellOpen := `<c r="` + cellCoordinate + `" t="` + cellType + `"`
 		// Add in the style id if the cell isn't using the default style
-		if colIndex < len(sf.currentSheet.styleIds) && sf.currentSheet.styleIds[colIndex] != 0 {
+		if colIndex < len(sf.currentSheet.styleIds) && sf.currentSheet.styleIds[colIndex] != 0 && *sf.SheetHeaderTypes[colIndex] != *CellTypeNumeric.Ptr() {
 			cellOpen += ` s="` + strconv.Itoa(sf.currentSheet.styleIds[colIndex]) + `"`
 		}
-		cellOpen += `><is><t>`
-		cellClose := `</t></is></c>`
+		cellClose := ""
+		if *sf.SheetHeaderTypes[colIndex] == *CellTypeNumeric.Ptr() {
+			cellOpen += `><v>`
+			cellClose = `</v></c>`
+		} else {
+			cellOpen += `><is><t>`
+			cellClose = `</t></is></c>`
+		}
+		// cellOpen += `><is><t>`
+		// cellClose := `</t></is></c>`
 
 		if err := sf.currentSheet.write(cellOpen); err != nil {
 			return err

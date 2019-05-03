@@ -128,7 +128,7 @@ func (sb *StreamFileBuilder) AddValidation(sheetIndex, colIndex, rowStartIndex i
 
 // Build begins streaming the XLSX file to the io, by writing all the XLSX metadata. It creates a StreamFile struct
 // that can be used to write the rows to the sheets.
-func (sb *StreamFileBuilder) Build() (*StreamFile, error) {
+func (sb *StreamFileBuilder) Build(sheetHeaderTypes []*CellType) (*StreamFile, error) {
 	if sb.built {
 		return nil, BuiltStreamFileBuilderError
 	}
@@ -138,11 +138,12 @@ func (sb *StreamFileBuilder) Build() (*StreamFile, error) {
 		return nil, err
 	}
 	es := &StreamFile{
-		zipWriter:      sb.zipWriter,
-		xlsxFile:       sb.xlsxFile,
-		sheetXmlPrefix: make([]string, len(sb.xlsxFile.Sheets)),
-		sheetXmlSuffix: make([]string, len(sb.xlsxFile.Sheets)),
-		styleIds:       sb.styleIds,
+		zipWriter:        sb.zipWriter,
+		xlsxFile:         sb.xlsxFile,
+		sheetXmlPrefix:   make([]string, len(sb.xlsxFile.Sheets)),
+		sheetXmlSuffix:   make([]string, len(sb.xlsxFile.Sheets)),
+		styleIds:         sb.styleIds,
+		SheetHeaderTypes: sheetHeaderTypes,
 	}
 	for path, data := range parts {
 		// If the part is a sheet, don't write it yet. We only want to write the XLSX metadata files, since at this
