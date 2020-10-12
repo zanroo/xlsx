@@ -10,6 +10,7 @@ import (
 
 type StreamFile struct {
 	xlsxFile         *File
+	writer           *io.Writer
 	sheetXmlPrefix   []string
 	sheetXmlSuffix   []string
 	zipWriter        *zip.Writer
@@ -49,8 +50,13 @@ func (sf *StreamFile) Write(cells []string) error {
 		sf.err = err
 		return err
 	}
-	return sf.zipWriter.Flush()
+	// return sf.zipWriter.Flush()
+	return nil
 }
+
+// func (sf *StreamFile) Flush() error {
+// 	return sf.zipWriter.Flush()
+// }
 
 func (sf *StreamFile) WriteAll(records [][]string) error {
 	if sf.err != nil {

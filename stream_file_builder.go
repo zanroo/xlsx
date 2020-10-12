@@ -35,6 +35,7 @@ import (
 type StreamFileBuilder struct {
 	built              bool
 	xlsxFile           *File
+	writer             *io.Writer
 	zipWriter          *zip.Writer
 	cellTypeToStyleIds map[CellType]int
 	maxStyleId         int
@@ -59,6 +60,14 @@ func NewStreamFileBuilder(writer io.Writer) *StreamFileBuilder {
 	return &StreamFileBuilder{
 		zipWriter:          zip.NewWriter(writer),
 		xlsxFile:           NewFile(),
+		cellTypeToStyleIds: make(map[CellType]int),
+		maxStyleId:         initMaxStyleId,
+	}
+}
+
+func NewStreamWriterBuilder(writer *io.Writer) *StreamFileBuilder {
+	return &StreamFileBuilder{
+		writer:             writer,
 		cellTypeToStyleIds: make(map[CellType]int),
 		maxStyleId:         initMaxStyleId,
 	}
@@ -139,6 +148,7 @@ func (sb *StreamFileBuilder) Build(sheetHeaderTypes []*CellType) (*StreamFile, e
 	}
 	es := &StreamFile{
 		zipWriter:        sb.zipWriter,
+		writer:           sb.writer,
 		xlsxFile:         sb.xlsxFile,
 		sheetXmlPrefix:   make([]string, len(sb.xlsxFile.Sheets)),
 		sheetXmlSuffix:   make([]string, len(sb.xlsxFile.Sheets)),
